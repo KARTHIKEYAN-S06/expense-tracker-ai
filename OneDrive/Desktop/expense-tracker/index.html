@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Expense Tracker • Pro</title>
+
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar card">
+      <div class="brand">
+        <h1>Expense Tracker • <span class="muted">Pro</span></h1>
+        <div class="muted small">Personal Finance Dashboard</div>
+      </div>
+
+      <div class="top-controls">
+        <label class="top-select">
+          Theme
+          <select id="themeSelect" title="Choose theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="midnight">Midnight Blue</option>
+            <option value="emerald">Emerald Green</option>
+            <option value="sunset">Sunset Orange</option>
+          </select>
+        </label>
+
+        <button id="exportCsvBtn">Export CSV</button>
+        <button id="exportJsonBtn">Export JSON</button>
+        <button id="exportPdfBtn">Export PDF</button>
+
+        <label class="import-label">Import
+          <input id="importJson" type="file" accept=".json"/>
+        </label>
+
+        <label class="top-select">
+          Profile
+          <select id="profileSelect" title="Switch profile"></select>
+        </label>
+      </div>
+    </header>
+
+    <main>
+      <!-- Stats -->
+      <section class="dashboard-cards">
+        <div class="card stat">
+          <div class="card-title">Balance</div>
+          <div class="card-value" id="balance">$0.00</div>
+        </div>
+        <div class="card stat">
+          <div class="card-title">Total Income</div>
+          <div class="card-value success" id="totalIncome">$0.00</div>
+        </div>
+        <div class="card stat">
+          <div class="card-title">Total Expense</div>
+          <div class="card-value danger" id="totalExpense">$0.00</div>
+        </div>
+        <div class="card stat">
+          <div class="card-title">Monthly Avg</div>
+          <div class="card-value" id="monthlyAvg">$0.00</div>
+        </div>
+      </section>
+
+      <!-- Add Transaction -->
+      <section class="card add-transaction">
+        <h2>Add Transaction</h2>
+        <input id="transactionName" placeholder="Name (e.g. Salary / Groceries)" autocomplete="off"/>
+        <div id="autoCategoryHint" class="muted small" aria-live="polite"></div>
+
+        <input id="transactionAmount" type="number" placeholder="Amount" />
+
+        <div class="row-inline">
+          <select id="transactionType">
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+
+          <select id="transactionCategory"></select>
+
+          <input id="newCategory" placeholder="+ add category" />
+          <input id="transactionDate" type="date" />
+        </div>
+
+        <div class="row-inline actions">
+          <button id="addBtn" class="primary">Add</button>
+
+          <!-- voice button -->
+          <button id="voiceBtn" title="Add by speaking">🎤 Voice Add</button>
+
+          <button id="cancelEdit" class="hidden">Cancel</button>
+          <button id="clearBtn" class="muted">Clear All</button>
+        </div>
+
+        <label class="small"><input id="isRecurring" type="checkbox"> Recurring monthly</label>
+        <p id="formWarning" class="warning" aria-live="polite"></p>
+      </section>
+
+      <!-- Goals & Budgets -->
+      <section class="card goals-budgets">
+        <h2>Goals & Budgets</h2>
+        <div class="row-inline">
+          <input id="goalName" placeholder="Goal name (e.g., Emergency Fund)"/>
+          <input id="goalAmount" type="number" placeholder="Target amount"/>
+          <button id="addGoal" class="small">Add Goal</button>
+        </div>
+
+        <div id="goalsList"></div>
+
+        <hr/>
+
+        <div class="row-inline">
+          <select id="budgetCategory"></select>
+          <input id="budgetLimit" type="number" placeholder="Limit amount"/>
+          <button id="addBudget" class="small">Set Budget</button>
+        </div>
+
+        <div id="budgetsList"></div>
+      </section>
+
+      <!-- Monthly Summary + Prediction -->
+      <section class="card monthly-summary">
+        <h2>Monthly Summary</h2>
+
+        <div class="monthly-summary-top">
+          <div id="pieContainer" class="pie-container"></div>
+          <div id="topCategory" class="muted small"></div>
+        </div>
+
+        <table id="monthlyCompare" class="monthly-table">
+          <thead>
+            <tr><th>Month</th><th>Income</th><th>Expense</th><th>Net</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div id="predictionCard" class="card prediction-card">
+          <h3>Predicted Next Month</h3>
+          <div class="prediction-row">
+            <div>Income: <strong id="predIncome">$0.00</strong></div>
+            <div>Expense: <strong id="predExpense">$0.00</strong></div>
+            <div>Net: <strong id="predNet">$0.00</strong></div>
+          </div>
+          <div class="muted small" id="predictionNote">Prediction uses simple linear regression over last 6 months.</div>
+        </div>
+      </section>
+
+      <!-- Transaction History -->
+      <section class="card history">
+        <div class="history-header">
+          <h3>Transaction History</h3>
+          <div class="history-controls">
+            <input id="searchInput" placeholder="Search transactions..." />
+            <select id="filterType"><option value="all">All</option><option value="income">Income</option><option value="expense">Expense</option></select>
+            <select id="filterMonth"></select>
+            <select id="filterYear"></select>
+            <select id="pageSize"><option>25</option><option selected>50</option><option>100</option></select>
+          </div>
+        </div>
+
+        <ul id="transactionList" class="transaction-list"></ul>
+
+        <div class="pagination">
+          <button id="prevPage">Prev</button>
+          <span id="pageInfo">1</span>
+          <button id="nextPage">Next</button>
+        </div>
+      </section>
+
+      <!-- AI Assistant (chat) -->
+      <section class="card ai-chat">
+        <h2>AI Assistant</h2>
+
+        <div id="chatWindow" class="chat-window" aria-live="polite"></div>
+
+        <div class="chat-input-row">
+          <input id="chatInput" placeholder="Ask anything about your expenses…" />
+          <button id="chatSendBtn">Send</button>
+        </div>
+      </section>
+
+      <footer class="small card">
+        <small>Built with HTML/CSS/JS • Data stored per profile in localStorage</small>
+      </footer>
+    </main>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
