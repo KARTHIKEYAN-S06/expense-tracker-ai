@@ -41,17 +41,6 @@ Use Live Server (VS Code) OR python -m http.server
  ├── style.css
  ├── script.js
  └── README.md
-
-📸 Sample Screenshots
-
-Upload images → then use this format in README:
-
-![Dashboard](images/dashboard.png)
-![Add Transaction](images/add-transaction.png)
-
-
-(You can upload screenshots directly on GitHub — it will give you a link.)
-
+ 
 📝 License
-
 This project is free to use for learning & personal use.
